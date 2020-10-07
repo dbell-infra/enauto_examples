@@ -8,5 +8,4 @@ The SD-WAN module includes code to retrieve information and code to configure, i
 
 The DNAC module at this time only includes retrieval functions, (I will add configuration functions once a reservable instance is available). 
 
-The Meraki code will include retrieval and configuration functionality once it is pushed to the repo. 
-
+The Meraki code at this time only includes retrieval functions, (I will add configuration functions once a reservable instance is available).
