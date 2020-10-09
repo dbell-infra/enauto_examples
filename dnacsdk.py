@@ -52,6 +52,18 @@ class Dnac:
 
         return response.json()
 
+    def post(self, endpoint, payload,debug=False,):
+        if debug:
+            print(f"Executing GET request against endpoint: {endpoint} \n  Base URL: {self.baseurl}")
+
+        response = requests.post(url=f"{self.baseurl}/{endpoint}", headers=self.headers,
+                                verify=self.verify, data=payload)
+        if debug:
+            print(f"  Status: {response.status_code} {response.reason}")
+
+        return response.json()
+
+
     def get_sites(self, debug=False, pp=False, id=None):
         kwargs = {
             "endpoint": "intent/api/v1/site",
@@ -61,7 +73,7 @@ class Dnac:
         response = self.get(**kwargs)
 
         if pp:
-            return json.dumps(response, indent=2)
+            print(json.dumps(response, indent=2))
 
         return response
 
@@ -198,6 +210,60 @@ class Dnac:
 
         return response
 
+    def create_site(self, site_type, name,  parentname, coord=(None, None), dimensions=(None,None,None), address=None, rfmodel=None, debug=False, pp=False):
+        if site_type == "area":
+            payload = {
+                "type": site_type,
+                "site": {
+                    site_type: {
+                        "name": name,
+                        "parentName": parentname
+                    }
+                }
+            }
+
+        if site_type == "building":
+            payload = {
+                "type": site_type,
+                "site": {
+                    site_type: {
+                        "name": name,
+                        "address": address,
+                        "parentName": parentname,
+                        "latitude": coord[0],
+                        "longitude": coord[1]
+                    }
+                }
+            }
+
+        if site_type == "floor":
+            payload = {
+                "type": site_type,
+                "site": {
+                    site_type: {
+                        "name": name,
+                        "address": address,
+                        "parentName": parentname,
+                        "width": dimensions[0],
+                        "length": dimensions[1],
+                        "height": dimensions[2],
+                        "rfModel": rfmodel
+                    }
+                }
+            }
+
+        kwargs = {
+            "endpoint": "intent/api/v1/site",
+            "debug": debug,
+            "payload": json.dumps(payload)
+        }
+
+        response = self.post(**kwargs)
+
+        if pp:
+            print(json.dumps(response, indent=2))
+
+        return response
 
 
 
