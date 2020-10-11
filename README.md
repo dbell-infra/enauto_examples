@@ -6,6 +6,6 @@ All of these modules include the means by which to authenticate to each platform
 
 The SD-WAN module includes code to retrieve information and code to configure, including configuration examples. 
 
-The DNAC module at this time only includes retrieval functions, (I will add configuration functions once a reservable instance is available). 
+The DNAC module includes code to retrieve information and code to add locations and template projects. 
 
 The Meraki code at this time only includes retrieval functions, (I will add configuration functions once a reservable instance is available).
