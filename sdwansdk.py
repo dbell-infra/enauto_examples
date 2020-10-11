@@ -27,46 +27,41 @@ class Sdwan:
 
     def get_devices(self,pp=None,write=None, dtype=None, hostname=None, debug=None):
         endpoint = '/dataservice/device'
-        args = {'endpoint': endpoint, 'pp': pp, 'write': write, 'debug': debug}
+        kwargs = {
+            'endpoint': endpoint,
+            'pp': pp,
+            'write': write,
+            'debug': debug
+        }
 
-        # if any of these search parameters need to pretty print the output, we need to collect
-        # the response first, then do the search operation, then do json.dumps
-        if hostname and not pp:
-            response = self.generic_get(**args)
+        if hostname:
+            response = self.get(**kwargs)
             host_response = [i for i in response if i['host-name'] == hostname]
             return host_response
-        if hostname and pp:
-            response = self.generic_get(endpoint=endpoint, debug=debug)
-            host_response = [i for i in response if i['host-name'] == hostname]
-            return json.dumps(host_response, indent=2)
 
-        if dtype and not pp:
-            response = self.generic_get(**args)
+        if dtype:
+            response = self.get(**kwargs)
             data = [i for i in response if i['device-type'] == dtype]
             return data
-        if dtype and pp:
-            response = self.generic_get(endpoint=endpoint, debug=debug)
-            data = [i for i in response if i['device-type'] == dtype]
-            return json.dumps(data, indent=2)
 
-        response = self.generic_get(**args)
-        # if write is true, write the JSON response body to a text file
-        if write:
-            with open(f"request-get_devices.txt", "w") as file:
-                file.write(response)
+        response = self.get(**kwargs)
+
         return response
 
-    def get_users(self, group=None, pp=None, debug=None):
+    def get_users(self, group=None, pp=None, debug=None, write=None):
         endpoint = '/dataservice/admin/user'
-        args = {"pp": pp, "debug": debug, "endpoint": endpoint}
-        response = self.generic_get(**args)
+        kwargs = {
+            "pp": pp,
+            "debug": debug,
+            "endpoint": endpoint,
+            "write": write
+        }
 
-        if group and not pp:
+        response = self.get(**kwargs)
+
+        if group:
             data = [i for i in response.json()['data'] if group in i['group']]
             return data
-        if group and pp:
-            data = [i for i in response.json()['data'] if group in i['group']]
-            return json.dumps(data, indent=2)
 
         return response
 
@@ -87,22 +82,20 @@ class Sdwan:
 
     def get_device_templates(self, pp=None, write=None, name=None, debug=None):
         endpoint = "/dataservice/template/device"
-        args = {"pp": pp, "write": write, 'endpoint': endpoint, 'debug': debug}
+        kwargs = {
+            "pp": pp,
+            "write": write,
+            'endpoint': endpoint,
+            'debug': debug
+        }
 
-        if name and not pp:
-            response = self.generic_get(**args)
+        if name:
+            response = self.get(**kwargs)
             data = [i for i in response if i['templateName'] == name]
             return data
-        if name and pp:
-            response = self.generic_get(endpoint=endpoint, debug=debug)
-            data = [i for i in response if i['templateName'] == name]
-            return json.dumps(data, indent=2)
 
-        response = self.generic_get(**args)
+        response = self.get(**kwargs)
 
-        if write:
-            with open(f"request-get_device_templates.txt", "w") as file:
-                file.write(json.dumps(response, indent=2))
         return response
 
     def attach_device_template(self, device_ids, template_id):
@@ -139,14 +132,17 @@ class Sdwan:
         return attach_response.json()
 
     def get_feature_templates(self,pp=None,write=None):
-        response = self.session.get(f"{self.base_url}/dataservice/template/feature", headers=self.headers)
-        if write:
-            with open(f"request-get_feature_templates.txt", "w") as file:
-                file.write(json.dumps(response.json()['data'], indent=2))
-        if pp:
-            return json.dumps(response.json()['data'], indent=2)
-        else:
-            return response.json()['data']
+        endpoint = "/dataservice/template/feature"
+
+        kwargs ={
+            "pp": pp,
+            "write": write,
+            "endpoint": endpoint
+        }
+
+        response = self.get(**kwargs)
+
+        return response.json()['data']
 
     def create_device_template(self, payload):
         self.session.headers['Content-Type'] = "application/json"
@@ -155,19 +151,28 @@ class Sdwan:
 
         return response.json()
 
-    def create_policy_site_list(self,name, entries):
+    def create_policy_site_list(self,name, entries, pp=None, write=None, debug=None):
         endpoint = '/dataservice/template/policy/list/site'
         payload = {
-                      "name": name,
-                      "description": "Desc Not Required",
-                      "type": "site",
-                      "listId": None,
-                      "entries": entries
-                    }
-        response = self.generic_post(endpoint, json.dumps(payload))
+                "name": name,
+                "description": "Desc Not Required",
+                "type": "site",
+                "listId": None,
+                "entries": entries
+        }
+
+        kwargs = {
+            "pp": pp,
+            "write": write,
+            'endpoint': endpoint,
+            'debug': debug,
+            'payload': json.dumps(payload)
+        }
+
+        response = self.post(**kwargs)
         return response
 
-    def create_policy_prefix_list(self, name, type, entries):
+    def create_policy_prefix_list(self, name, type, entries, debug=None, write=None, pp=None):
         endpoint = f'/dataservice/template/policy/list/{type}'
         payload = {
                   "name": name,
@@ -175,11 +180,18 @@ class Sdwan:
                   "type": type,
                   "entries": entries
                 }
+        kwargs = {
+            "pp": pp,
+            "write": write,
+            'endpoint': endpoint,
+            'debug': debug,
+            'payload': json.dumps(payload)
+        }
 
-        response = self.generic_post(endpoint, json.dumps(payload))
+        response = self.post(**kwargs)
         return response
 
-    def create_policy_vpn_list(self, name, vpn_id):
+    def create_policy_vpn_list(self, name, vpn_id, debug=None, write=None, pp=None):
         endpoint = '/dataservice/template/policy/list/vpn'
         payload = {
           "name": name,
@@ -193,10 +205,18 @@ class Sdwan:
           ]
         }
 
-        response = self.generic_post(endpoint, json.dumps(payload))
+        kwargs = {
+            "pp": pp,
+            "write": write,
+            'endpoint': endpoint,
+            'debug': debug,
+            'payload': json.dumps(payload)
+        }
+
+        response = self.post(**kwargs)
         return response
 
-    def create_policy_network(self, type, vpn_list_id, site_list_id, name, desc, region_name):
+    def create_policy_network(self, type, vpn_list_id, site_list_id, name, desc, region_name, debug=None, write=None, pp=None):
         endpoint = f"/dataservice/template/policy/definition/{type}"
         payload = {
               "name": name,
@@ -215,10 +235,19 @@ class Sdwan:
               }
             }
 
-        response = self.generic_post(endpoint, json.dumps(payload))
+        kwargs = {
+            "pp": pp,
+            "write": write,
+            'endpoint': endpoint,
+            'debug': debug,
+            'payload': json.dumps(payload)
+        }
+
+        response = self.post(**kwargs)
+
         return response
 
-    def create_policy_definition(self, sequence_list, type, name, description):
+    def create_policy_definition(self, sequence_list, type, name, description, debug=None, write=None, pp=None):
         endpoint = f"/dataservice/template/policy/definition/{type}"
         payload = {
             "name": name,
@@ -230,10 +259,18 @@ class Sdwan:
             "sequences": sequence_list
 
         }
-        response = self.generic_post(endpoint, json.dumps(payload))
+        kwargs = {
+            "pp": pp,
+            "write": write,
+            'endpoint': endpoint,
+            'debug': debug,
+            'payload': json.dumps(payload)
+        }
+
+        response = self.post(**kwargs)
         return response
 
-    def apply_policy_template(self, description, name, policy_def_id, site_list_id, vpn_list_id, net_def_id):
+    def apply_policy_template(self, description, name, policy_def_id, site_list_id, vpn_list_id, net_def_id, debug=None, write=None, pp=None):
         endpoint = '/dataservice/template/policy/vsmart/'
         payload = {
           "policyDescription": description,
@@ -264,36 +301,44 @@ class Sdwan:
           },
           "isPolicyActivated": False
         }
-        response = self.generic_post(endpoint, json.dumps(payload))
+        kwargs = {
+            "pp": pp,
+            "write": write,
+            'endpoint': endpoint,
+            'debug': debug,
+            'payload': json.dumps(payload)
+        }
+
+        response = self.post(**kwargs)
         return response
 
     def get_certificates_vedge(self, pp=None, write=None, deviceip=None, debug=None):
         endpoint = f"/dataservice/certificate/vedge/list"
         args = {"pp": pp, "write": write, 'endpoint': endpoint, 'debug': debug}
-        if deviceip and not pp:
-            response = self.generic_get(**args)
+        if deviceip:
+            response = self.get(**args)
             device = [i for i in response if "deviceIP" in i.keys() and i['deviceIP'] == deviceip]
             return device
 
-        elif deviceip and pp:
-            response = self.generic_get(endpoint=endpoint, debug=debug)
-            device = [i for i in response if "deviceIP" in i.keys() and i['deviceIP'] == deviceip]
-            return json.dumps(device, indent=2)
-        else:
-            response = self.generic_get(**args)
+        response = self.get(**args)
 
         return response
 
     def get_sites_bfd(self, pp=None, write=None, detail=None, debug=None):
         endpoint = "/dataservice/device/bfd/sites/summary"
+        kwargs = {
+            "pp": pp,
+            "write": write,
+            'endpoint': endpoint,
+            'debug': debug
+        }
 
-        args = {"pp": pp, "write": write, 'endpoint': endpoint, 'debug': debug}
-        response = self.generic_get(**args)
+        response = self.get(**kwargs)
 
         if detail:
-            endpoint=f"/dataservice/device/bfd/sites/detail?state={detail}"
-            args = {"pp": pp, "write": write, 'endpoint': endpoint, 'debug': debug}
-            response = self.generic_get(**args)
+            kwargs["endpoint"] = f"/dataservice/device/bfd/sites/detail?state={detail}"
+
+            response = self.get(**kwargs)
 
         return response
 
@@ -340,10 +385,7 @@ class Sdwan:
             }
 
         args = {"pp": pp, "write": write, 'endpoint': endpoint, 'debug': debug, 'payload': payload}
-        response = self.generic_post(**args)
-
-        if pp:
-            return json.dumps(response, indent=2)
+        response = self.post(**args)
 
         return response['data']
 
@@ -351,31 +393,63 @@ class Sdwan:
         endpoint = f"/dataservice/device/counters?deviceId={deviceip}"
         args = {"pp": pp, "write": write, 'endpoint': endpoint, 'debug': debug}
 
-        return self.generic_get(**args)
+        return self.get(**args)
 
-    def generic_post(self, endpoint, payload, debug=None):
+    def post(self, endpoint, payload, debug=None, pp=None, write=None):
         self.session.headers['Content-Type'] = "application/json"
         self.session.headers['Accept'] = "application/json"
         if debug:
             print(f"Executing POST against {endpoint}")
+
         response = self.session.post(url=f"{self.base_url}{endpoint}", data=payload)
+
+        if debug:
+            print(f"  Status: {response.status_code} {response.reason}")
+
+        if write:
+            try:
+                with open(f"POST-{str.replace(endpoint,'/','-')}.txt", "w") as file:
+                    file.write(json.dumps(response.json(), indent=2))
+            except:
+                with open(f"POST-{str.replace(endpoint,'/','-')}.txt", "w") as file:
+                    file.write(response)
+
+        if pp:
+            print(json.dumps(response.json(), indent=2))
 
         try:
             return response.json()
         except:
             return response.text
 
-    def generic_get(self, endpoint, pp=None,write=None, debug=None):
+    def get(self, endpoint, pp=None, write=None, debug=None):
         if debug:
             print(f"Executing GET against endpoint: {endpoint}")
         response = self.session.get(f"{self.base_url}{endpoint}", headers=self.headers)
+
+        if debug:
+            print(f"  Status: {response.status_code} {response.reason}")
+
         if write:
-            with open(f"request-generic.txt", "w") as file:
+            with open(f"GET-{str.replace(endpoint,'/','-')}.txt", "w") as file:
                 file.write(json.dumps(response.json()['data'], indent=2))
         if pp:
-            return json.dumps(response.json()['data'], indent=2)
-        else:
-            return response.json()['data']
+            print(json.dumps(response.json()['data'], indent=2))
+
+        return response.json()['data']
+
+    def delete(self, endpoint, pp=None, write=None, debug=None):
+        if debug:
+            print(f"Executing DELETE against endpoint: {endpoint}")
+        response = self.session.delete(f"{self.base_url}{endpoint}", headers=self.headers)
+
+        if debug:
+            print(f"  Status: {response.status_code} {response.reason}")
+
+        if pp:
+            print(response.text)
+
+        return response.text
 
     def poll_task(self, uuid, retries=5):
         print(f'Polling {uuid} for status with {retries} retries')
